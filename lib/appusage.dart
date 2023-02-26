@@ -1,9 +1,13 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+
 import 'package:usage_stats/usage_stats.dart';
 
 class AppUsage extends StatefulWidget {
+  const AppUsage({super.key});
+
   @override
+  
   _AppUsageState createState() => _AppUsageState();
 }
 
@@ -17,13 +21,12 @@ class _AppUsageState extends State<AppUsage> {
 
     initUsage();
   }
-
-  Future<void> initUsage() async {
+Future<void> initUsage() async {
     try {
       UsageStats.grantUsagePermission();
 
-      DateTime endDate = new DateTime.now();
-      DateTime startDate = endDate.subtract(Duration(days: 1));
+      DateTime endDate = DateTime.now();
+      DateTime startDate = endDate.subtract(const Duration(days: 1));
 
       List<EventUsageInfo> queryEvents =
           await UsageStats.queryEvents(startDate, endDate);
@@ -33,9 +36,8 @@ class _AppUsageState extends State<AppUsage> {
         networkType: NetworkType.all,
       );
 
-      // ignore: prefer_for_elements_to_map_fromiterable
-      Map<String?, NetworkInfo?> netInfoMap = Map.fromIterable(networkInfos,
-          key: (v) => v.packageName, value: (v) => v);
+  
+      var netInfoMap = { for (var v in networkInfos) v.packageName.toString() : v };
 
       List<UsageInfo> t = await UsageStats.queryUsageStats(startDate, endDate);
 
@@ -108,3 +110,4 @@ class _AppUsageState extends State<AppUsage> {
     );
   }
 }
+

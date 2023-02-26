@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
- 
+import 'appusage.dart';
 
 class SecretScreen extends StatefulWidget {
   const SecretScreen({super.key});
@@ -12,8 +12,7 @@ class SecretScreen extends StatefulWidget {
 class _SecretScreen extends State<SecretScreen> {
   @override
   Widget build(BuildContext context) {
-    return const Text('hell');
-    //AppUsage();
+    return AppUsage();
     /*
   Align(
         alignment: Alignment.topLeft,

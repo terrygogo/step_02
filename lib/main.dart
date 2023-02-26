@@ -15,11 +15,11 @@ import 'bodytemplate.dart';
 import 'ddayscreen.dart';
 import 'heritagescreen.dart';
 import 'intro.dart';
-import 'metaScreen.dart';
 import 'metamain.dart';
 import 'secretscreen.dart';
 import 'src/authentication.dart'; // new
 import 'src/widgets.dart';
+import 'userprofile.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -229,8 +229,8 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     BodyTemplate('메타팸, 우리 가족 디지털 공간', MetaMain()),
     SecretScreen(),
     TalkScreen(),
-    BodyTemplate('펨데이, 우리 가족 기념일 관리', DdayScreen()),
-    HeritageScreen(),
+    BodyTemplate('펨데이, 우리 가족 기념일 관리', TableEventsExample()),
+    BodyTemplate('헤리티지펨', HeritageScreen()),
   ];
 
   void _onItemTapped(int index) {
@@ -240,12 +240,28 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Provider.of<ApplicationState>(context).currentFamily =
+    //    Provider.of<ApplicationState>(context)._famlist[0].famname;
+    // Provider.of<ApplicationState>(context).currentUser =
+    //   FirebaseAuth.instance.currentUser!.displayName!;
+
+    // check current user exist on ptofile list
+    // if not create popup
+    // if exist load to current
+    //final FirebaseAuth auth = FirebaseAuth.instance;
+    //Provider.of<ApplicationState>(context).setCurrentUser(auth.currentUser.toString());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String? abc = FirebaseAuth.instance.currentUser!.displayName;
+    //final String? abc = FirebaseAuth.instance.currentUser!.displayName;
+
     return Consumer<ApplicationState>(
         builder: (context, appState, child) => Scaffold(
               appBar: AppBar(
-                title: Text(abc! + '\'s Fam'),
+                title: Text(appState.currentUser + '\'s Fam'),
                 actions: [
                   IconButton(
                       icon: Icon(
@@ -259,7 +275,12 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                         color: Colors.white,
                       ),
                       onPressed: () {
-                        Navigator.of(context).pushNamed('/profile');
+                        Navigator.push<void>(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CardPage()),
+                        );
+                        ;
                       }),
                   PopupMenuButton<Text>(
                     itemBuilder: (context) {
@@ -375,10 +396,12 @@ class HomePage2 extends StatelessWidget {
 }
 
 class UserEntry {
-  UserEntry({required this.name, required this.message, required this.famname});
-  final String name;
-  String message;
-  final String famname;
+  UserEntry({required this.name, required this.email, required this.phone, required this.birthday});
+  String name;
+  String email;
+  String phone;
+  String birthday;
+ 
 }
 
 class FamEntry {
@@ -387,10 +410,10 @@ class FamEntry {
       required this.message,
       required this.fammood,
       required this.members});
-  final String famname;
+  String famname;
   String message;
-  final String fammood;
-  List<UserEntry> members = [];
+  String fammood;
+  String members;
 }
 
 class FootList {
@@ -412,31 +435,39 @@ class ApplicationState extends ChangeNotifier {
   bool _loggedIn = false;
   bool get loggedIn => _loggedIn;
   StreamSubscription<QuerySnapshot>? _guestBookSubscription;
+  StreamSubscription<QuerySnapshot>? _familyBookSubscription;
   List<GuestBookMessage> _guestBookMessages = [];
   List<GuestBookMessage> get guestBookMessages => _guestBookMessages;
   StreamSubscription<QuerySnapshot>? _userListSubscription;
   List<UserEntry> _userslist = [];
   List<UserEntry> get userslist => _userslist;
 
-  List<FamEntry> _famlist = [];
+  late List<FamEntry> _famlist = [];
   List<FamEntry> get famlist => _famlist;
 
   List<FootList> _footlist = [];
   List<FootList> get footlist => _footlist;
+  String currentUser = 'default';
+  String currentFamily = 'default';
+  int currentFamilyIndex = 0;
 
-   // UserEntry?  myuser;
-   // FamEntry? myfam;
+  // UserEntry?  myuser;
+  // FamEntry? myfam;
 
   String xxx = 'from here ';
 
   Future<void> init() async {
+    currentUser = FirebaseAuth.instance.currentUser!.displayName!;
+    //currentFamily = famlist[0].famname;
     // await Firebase.initializeApp(
     //   options: DefaultFirebaseOptions.currentPlatform);
 
     //FirebaseUIAuth.configureProviders([
     //  EmailAuthProvider(),
     // ]);
- 
+    // currentUser = FirebaseAuth.instance.currentUser!.displayName!;
+    // currentFamily = famlist[0].famname;
+    /*
     _userslist.add(UserEntry(
       name: 'terry',
       message: 'soso',
@@ -462,20 +493,16 @@ class ApplicationState extends ChangeNotifier {
       message: 'good',
       famname: 'aloha',
     ));
- 
+    */
+
     _famlist.add(FamEntry(
-        famname: 'ohana',
-        message: '모두들 건강하시고',
-        fammood: 'good',
-        members: userslist));
+        famname: 'ohana', message: '모두들 건강하시고', fammood: 'good', members: ' '));
 
     _famlist.add(FamEntry(
         famname: 'aloha',
         message: '연락 좀  하고 삽시다',
         fammood: 'bad',
-        members: userslist));
-
-
+        members: ' '));
 
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
@@ -503,11 +530,11 @@ class ApplicationState extends ChangeNotifier {
       }
       notifyListeners();
     });
- 
-FirebaseAuth.instance.userChanges().listen((user) {
+
+    FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
         _loggedIn = true;
-        _userslist = FirebaseFirestore.instance
+        _userListSubscription = FirebaseFirestore.instance
             .collection('userlist')
             .snapshots()
             .listen((snapshot) {
@@ -515,25 +542,52 @@ FirebaseAuth.instance.userChanges().listen((user) {
           for (final document in snapshot.docs) {
             _userslist.add(
               UserEntry(
-                
+                birthday: document.data()['birthday'] as String,
+                email: document.data()['email'] as String,
+                phone: document.data()['phone'] as String,
                 name: document.data()['name'] as String,
-                message: document.data()['message'] as String,
-                famname: document.data()['famname'] as String,
               ),
             );
           }
           notifyListeners();
-        }) as List<UserEntry>;
+        });
       } else {
         _loggedIn = false;
         _userslist = [];
         _userListSubscription?.cancel();
       }
       notifyListeners();
-    });  
-  //  myuser = userslist[0];
-   // myfam = famlist[0];
+    });
 
+    FirebaseAuth.instance.userChanges().listen((user) {
+      if (user != null) {
+        _loggedIn = true;
+        _familyBookSubscription = FirebaseFirestore.instance
+            .collection('familybook')
+            .snapshots()
+            .listen((snapshot) {
+          _famlist = [];
+          for (final document in snapshot.docs) {
+            _famlist.add(
+              FamEntry(
+                famname: document.data()['family'] as String,
+                message: document.data()['owner'] as String,
+                members: document.data()['member'] as String,
+                fammood: document.data()['fammood'] as String,
+              ),
+            );
+          }
+          currentFamily = _famlist[0].famname;
+          notifyListeners();
+        });
+      } else {
+        _loggedIn = false;
+        _famlist = [];
+        _familyBookSubscription?.cancel();
+      }
+
+      notifyListeners();
+    });
   }
 
   Future<DocumentReference> addMessageToGuestBook(String message) {
@@ -549,6 +603,30 @@ FirebaseAuth.instance.userChanges().listen((user) {
       'name': FirebaseAuth.instance.currentUser!.displayName,
       'userId': FirebaseAuth.instance.currentUser!.uid,
     });
+  }
+
+  void setFamily(int index) {
+    currentFamily = famlist[index].famname;
+
+    notifyListeners();
+  }
+
+  void setFamilyIndex(int index) {
+    currentFamilyIndex = index;
+
+    notifyListeners();
+  }
+
+  void setUser(int index) {
+    currentUser = userslist[index].name;
+
+    notifyListeners();
+  }
+
+  void setCurrentUser(String iname) {
+    currentUser = iname;
+
+    notifyListeners();
   }
 }
 

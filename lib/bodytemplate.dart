@@ -11,11 +11,8 @@ class BodyTemplate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Card(
-          child: Column(
-        //mainAxisAlignment: MainAxisAlignment.start,
+    return   Column(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Align(
            // heightFactor: 1,
@@ -25,17 +22,13 @@ class BodyTemplate extends StatelessWidget {
               child: Text(sectiontitle),
             ),
           ),
-          const SizedBox(height: 15),
-          Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(0),
-                child: Consumer<ApplicationState>(
+   
+          Expanded(child:  Consumer<ApplicationState>(
                   builder: (context, appState, _) => sectionscreen,
-                ),
-              ))
+                ),)
+              
         ],
-      )),
-    );
+      );
+    
   }
 }
